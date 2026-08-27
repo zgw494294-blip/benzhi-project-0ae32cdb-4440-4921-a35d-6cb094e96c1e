@@ -10,8 +10,9 @@ import (
 )
 
 type Service struct {
-	Repo      *store.Repository
-	Evaluator assessment.Evaluator
+	Repo           *store.Repository
+	Evaluator      assessment.Evaluator
+	evaluatorReady bool
 }
 
 func New(r *store.Repository) *Service {
@@ -165,8 +166,9 @@ func (s *Service) Evaluate(caseID string, expected int) (domain.AssessmentSnapsh
 	if expected < 1 {
 		return domain.AssessmentSnapshot{}, fmt.Errorf("%w: expectedVersion 必须为正数", domain.ErrInvalid)
 	}
-	if s.Evaluator.MaxColorDelta <= 0 || s.Evaluator.MinPH <= 0 || s.Evaluator.MinPeel <= 0 || s.Evaluator.MinObservation <= 0 {
+	if !s.evaluatorReady || s.Evaluator.MaxColorDelta <= 0 || s.Evaluator.MinPH <= 0 || s.Evaluator.MinPeel <= 0 || s.Evaluator.MinObservation <= 0 {
 		s.Evaluator = assessment.DefaultEvaluator()
+		s.evaluatorReady = true
 	}
 	c, e := s.Repo.GetCase(caseID)
 	if e != nil {
