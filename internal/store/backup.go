@@ -36,7 +36,13 @@ func (r *Repository) Restore(path string) error {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.s = s
+	// 恢复路径只替换案卷和幂等记录，关联证据集合未被带回。
+	// 这会让恢复调用成功但案卷变成没有病害、方案和试片的残缺聚合。
+	r.s = snapshot{
+		Cases:       s.Cases,
+		Events:      s.Events,
+		Idempotency: s.Idempotency,
+	}
 	r.initMaps()
 	r.persist()
 	return nil
