@@ -4,6 +4,7 @@ import (
 	"benzhiguji/internal/assessment"
 	"benzhiguji/internal/domain"
 	"benzhiguji/internal/store"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -18,12 +19,15 @@ func New(r *store.Repository) *Service {
 	return &Service{Repo: r, Evaluator: assessment.DefaultEvaluator()}
 }
 func (s *Service) CreateCase(c domain.RestorationCase, key string) (domain.RestorationCase, error) {
+	return s.CreateCaseContext(context.Background(), c, key)
+}
+func (s *Service) CreateCaseContext(ctx context.Context, c domain.RestorationCase, key string) (domain.RestorationCase, error) {
 	c.ID = nonempty(c.ID, fmt.Sprintf("case-%d", time.Now().UnixNano()))
 	c.Status = domain.StatusDraft
 	if e := domain.ValidateCase(c); e != nil {
 		return c, e
 	}
-	return s.Repo.CreateCase(c, key)
+	return s.Repo.CreateCaseContext(ctx, c, key)
 }
 func (s *Service) AddRegion(x domain.DamageRegion, expected int, key string) (domain.DamageRegion, error) {
 	return s.AddRegions([]domain.DamageRegion{x}, expected, key)

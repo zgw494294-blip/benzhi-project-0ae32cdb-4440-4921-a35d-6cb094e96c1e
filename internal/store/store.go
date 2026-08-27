@@ -2,6 +2,7 @@ package store
 
 import (
 	"benzhiguji/internal/domain"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -60,6 +61,9 @@ func (r *Repository) persist() {
 }
 func (r *Repository) Close() error { r.mu.Lock(); defer r.mu.Unlock(); r.persist(); return nil }
 func (r *Repository) CreateCase(c domain.RestorationCase, key string) (domain.RestorationCase, error) {
+	return r.CreateCaseContext(context.Background(), c, key)
+}
+func (r *Repository) CreateCaseContext(ctx context.Context, c domain.RestorationCase, key string) (domain.RestorationCase, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if v, ok := r.s.Idempotency[key]; key != "" && ok {

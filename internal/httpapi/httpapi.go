@@ -21,6 +21,7 @@ var web embed.FS
 
 type API struct {
 	Flow    *workflow.Service
+	Core    http.Handler
 	Handler http.Handler
 }
 
@@ -33,6 +34,7 @@ func New(flow *workflow.Service) *API {
 	mux.HandleFunc("/app.js", a.asset)
 	mux.HandleFunc("/api/cases", a.cases)
 	mux.HandleFunc("/api/cases/", a.caseAction)
+	a.Core = mux
 	a.Handler = http.TimeoutHandler(mux, requestTimeout, "请求超时")
 	return a
 }
@@ -132,7 +134,7 @@ func (a *API) cases(w http.ResponseWriter, r *http.Request) {
 		fail(w, e)
 		return
 	}
-	out, e := a.Flow.CreateCase(c, key(r))
+	out, e := a.Flow.CreateCaseContext(r.Context(), c, key(r))
 	if e != nil {
 		fail(w, e)
 		return
