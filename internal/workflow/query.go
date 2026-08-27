@@ -150,17 +150,24 @@ func (s *Service) PermitManifest(caseID string) (string, error) {
 	return domain.ManifestDigest(domain.EvidenceManifest(b.Case, b.Regions, b.Plan, b.Coupons, b.Assessment, rv)), nil
 }
 func (s *Service) CandidateDigest(caseID string) (string, error) {
+	s.candidateMu.Lock()
+	defer s.candidateMu.Unlock()
+	if digest, ok := s.candidateDigests[caseID]; ok {
+		return digest, nil
+	}
 	b, e := s.Repo.Bundle(caseID)
 	if e != nil {
 		return "", e
 	}
-	return domain.ManifestDigest(struct {
+	digest := domain.ManifestDigest(struct {
 		C domain.RestorationCase
 		R []domain.DamageRegion
 		P domain.TreatmentPlanRevision
 		T []domain.TrialCouponRevision
 		A domain.AssessmentSnapshot
-	}{b.Case, b.Regions, b.Plan, b.Coupons, b.Assessment}), nil
+	}{b.Case, b.Regions, b.Plan, b.Coupons, b.Assessment})
+	s.candidateDigests[caseID] = digest
+	return digest, nil
 }
 func (s *Service) PermitAge(caseID string) (time.Duration, error) {
 	p, e := s.Repo.Permit(caseID)

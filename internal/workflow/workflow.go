@@ -6,16 +6,23 @@ import (
 	"benzhiguji/internal/store"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Service struct {
-	Repo      *store.Repository
-	Evaluator assessment.Evaluator
+	Repo             *store.Repository
+	Evaluator        assessment.Evaluator
+	candidateMu      sync.Mutex
+	candidateDigests map[string]string
 }
 
 func New(r *store.Repository) *Service {
-	return &Service{Repo: r, Evaluator: assessment.DefaultEvaluator()}
+	return &Service{
+		Repo:             r,
+		Evaluator:        assessment.DefaultEvaluator(),
+		candidateDigests: map[string]string{},
+	}
 }
 func (s *Service) CreateCase(c domain.RestorationCase, key string) (domain.RestorationCase, error) {
 	c.ID = nonempty(c.ID, fmt.Sprintf("case-%d", time.Now().UnixNano()))
