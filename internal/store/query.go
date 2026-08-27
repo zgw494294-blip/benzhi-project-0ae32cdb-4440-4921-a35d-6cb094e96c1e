@@ -48,6 +48,9 @@ func (r *Repository) Bundle(id string) (CaseBundle, error) {
 func (r *Repository) ListCases() []domain.RestorationCase {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.casesCacheValid {
+		return append([]domain.RestorationCase(nil), r.casesCache...)
+	}
 	o := make([]domain.RestorationCase, 0, len(r.s.Cases))
 	for _, c := range r.s.Cases {
 		o = append(o, c)
@@ -61,6 +64,8 @@ func (r *Repository) ListCases() []domain.RestorationCase {
 		}
 		return o[i].TargetDate < o[j].TargetDate
 	})
+	r.casesCache = append(r.casesCache[:0], o...)
+	r.casesCacheValid = true
 	return o
 }
 func (r *Repository) FilterCases(f CaseFilter) []CaseListItem {

@@ -23,9 +23,11 @@ type snapshot struct {
 	Idempotency map[string]string                       `json:"idempotency"`
 }
 type Repository struct {
-	mu   sync.Mutex
-	path string
-	s    snapshot
+	mu              sync.Mutex
+	path            string
+	s               snapshot
+	casesCache      []domain.RestorationCase
+	casesCacheValid bool
 }
 
 func Open(path string) (*Repository, error) {
@@ -70,6 +72,7 @@ func (r *Repository) CreateCase(c domain.RestorationCase, key string) (domain.Re
 	c.CreatedAt = time.Now()
 	c.UpdatedAt = c.CreatedAt
 	r.s.Cases[c.ID] = c
+	r.casesCacheValid = false
 	r.addEvent(c.ID, "case.created", "案卷已创建")
 	r.saveKey(key, c)
 	r.persist()
