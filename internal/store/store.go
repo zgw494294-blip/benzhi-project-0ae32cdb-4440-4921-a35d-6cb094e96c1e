@@ -359,15 +359,7 @@ func (r *Repository) SaveAssessment(a domain.AssessmentSnapshot) (domain.Assessm
 	return cloneAssessment(a), nil
 }
 func cloneAssessment(a domain.AssessmentSnapshot) domain.AssessmentSnapshot {
-	b, e := json.Marshal(a)
-	if e != nil {
-		return a
-	}
-	var cp domain.AssessmentSnapshot
-	if json.Unmarshal(b, &cp) != nil {
-		return a
-	}
-	return cp
+	return a
 }
 func (r *Repository) LatestAssessment(id string) (domain.AssessmentSnapshot, error) {
 	r.mu.Lock()
