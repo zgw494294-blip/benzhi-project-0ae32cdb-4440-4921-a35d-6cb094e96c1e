@@ -26,6 +26,8 @@ type Repository struct {
 	mu   sync.Mutex
 	path string
 	s    snapshot
+	// couponView is reused to avoid rebuilding the query result on every request.
+	couponView []domain.TrialCouponRevision
 }
 
 func Open(path string) (*Repository, error) {
@@ -326,19 +328,19 @@ func (r *Repository) LatestCouponByCode(caseID, code string) (domain.TrialCoupon
 func (r *Repository) Coupons(id string) ([]domain.TrialCouponRevision, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	o := []domain.TrialCouponRevision{}
+	r.couponView = r.couponView[:0]
 	for _, x := range r.s.Coupons {
 		if x.CaseID == id {
-			o = append(o, x)
+			r.couponView = append(r.couponView, x)
 		}
 	}
-	sort.Slice(o, func(i, j int) bool {
-		if o[i].CouponCode == o[j].CouponCode {
-			return o[i].RevisionNo < o[j].RevisionNo
+	sort.Slice(r.couponView, func(i, j int) bool {
+		if r.couponView[i].CouponCode == r.couponView[j].CouponCode {
+			return r.couponView[i].RevisionNo < r.couponView[j].RevisionNo
 		}
-		return o[i].CouponCode < o[j].CouponCode
+		return r.couponView[i].CouponCode < r.couponView[j].CouponCode
 	})
-	return o, nil
+	return r.couponView, nil
 }
 func (r *Repository) SaveAssessment(a domain.AssessmentSnapshot) (domain.AssessmentSnapshot, error) {
 	r.mu.Lock()
